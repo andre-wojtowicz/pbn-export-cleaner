@@ -27,10 +27,14 @@ for (i in 2:length(doc.articles))
     #  4 - autors
     #  5 - affiliation
     #  6 - employment
+    # 15 - DOI
     # 17 - journal
     # 18 - ISSN
     # 19 - eISSN
     # 22 - points
+
+    doi   = curr.record[15] %>% html_text
+    doi   = ifelse(doi != "", trimws(doi), NA)
 
     issn  = curr.record[18] %>% html_text
     issn  = ifelse(issn != "", trimws(issn), NA)
@@ -50,6 +54,7 @@ for (i in 2:length(doc.articles))
                                                 as.integer,
                    points  = points,
                    journal = curr.record[17] %>% html_text %>% trimws,
+                   doi     = doi,
                    issn    = issn,
                    eissn   = eissn,
                    stringsAsFactors = FALSE)
@@ -113,3 +118,37 @@ for (article.title in titles.duplicated)
         articles %>%
         filter(!(title == article.title & year < year.newest))
 }
+
+# remove articles without points and misplaced proceedings chapters
+
+articles =
+    articles %>% filter(!is.na(points))
+
+# fix author names
+
+articles =
+    articles %>%
+    mutate(author = replace(author, author == "Jose Gabriel Carrasquel Vera", "Jose Carrasquel")) %>%
+    mutate(author = replace(author, author == "Małecka Agnieszka", "Agnieszka Małecka")) %>%
+    mutate(author = replace(author, author == "Jasiczak Michał", "Michał Jasiczak")) %>%
+    mutate(author = replace(author, author == "Reczkowski Michał", "Michał Rzeczkowski")) %>%
+    mutate(author = replace(author, author == "Małgorzata Bednarska", "Małgorzata Bednarska-Bzdęga")) %>%
+    rowwise %>%
+    mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
+    ungroup
+
+# fix missing authors
+
+articles = articles %>% bind_rows(
+        articles %>%
+            filter(doi %in% c("10.1016/j.ygyno.2016.06.020",
+                              "10.1016/j.asoc.2016.05.029")) %>%
+            group_by(doi) %>%
+            filter(row_number() == 1) %>%
+            mutate(author = "Wójtowicz, Andrzej", employment = FALSE) %>%
+            ungroup
+    )
+
+# statistics
+
+articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
