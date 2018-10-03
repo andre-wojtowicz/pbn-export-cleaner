@@ -1,7 +1,10 @@
 rm(list = ls())
 
-library(progress)
-library(rvest)
+suppressPackageStartupMessages({
+    library(dplyr)
+    library(progress)
+    library(rvest)
+})
 
 DOCUMENT.FILE = "data/eksport.html"
 
@@ -80,4 +83,33 @@ for (i in 2:length(doc.articles))
     articles = rbind(articles, merge(publication, persons))
 
     pb$tick()
+}
+
+# remove obvious duplicates
+articles = articles %>% unique
+
+# remove year duplicates
+
+titles.duplicated =
+    articles %>%
+    filter(duplicated(.[, c("author", "title")])) %>%
+    select(title) %>%
+    unique %>%
+    unlist %>%
+    unname
+
+for (article.title in titles.duplicated)
+{
+    year.newest =
+        articles %>%
+        select(title, year) %>%
+        filter(title == article.title) %>%
+        select(year) %>%
+        unlist %>%
+        unname %>%
+        max
+
+    articles =
+        articles %>%
+        filter(!(title == article.title & year < year.newest))
 }
