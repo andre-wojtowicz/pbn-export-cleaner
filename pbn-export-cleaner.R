@@ -25,7 +25,15 @@ for (i in 2:length(doc.articles))
     #  5 - affiliation
     #  6 - employment
     # 17 - journal
+    # 18 - ISSN
+    # 19 - eISSN
     # 22 - points
+
+    issn  = curr.record[18] %>% html_text
+    issn  = ifelse(issn != "", trimws(issn), NA)
+
+    eissn = curr.record[19] %>% html_text
+    eissn = ifelse(eissn != "", trimws(eissn), NA)
 
     points = curr.record[22] %>% html_text
     points = ifelse(!is.na(points), as.integer(points), NA)
@@ -39,6 +47,8 @@ for (i in 2:length(doc.articles))
                                                 as.integer,
                    points  = points,
                    journal = curr.record[17] %>% html_text %>% trimws,
+                   issn    = issn,
+                   eissn   = eissn,
                    stringsAsFactors = FALSE)
 
     authors      = curr.record[4] %>% html_nodes("td")
@@ -56,8 +66,10 @@ for (i in 2:length(doc.articles))
         # "\U2714" == Unicode HEAVY CHECK MARK
 
         author      = gsub("\\s+", " ", author)
-        affiliation = ifelse(affiliation == "\U2714", TRUE, FALSE)
-        employment  = ifelse(employment == "\U2714", TRUE, FALSE)
+        affiliation = ifelse(affiliation == "\U2714", TRUE,
+                             ifelse(affiliation == "", NA, FALSE))
+        employment  = ifelse(employment == "\U2714", TRUE,
+                             ifelse(employment == "", NA, FALSE))
 
         persons = rbind(persons, data.frame(author      = author,
                                             affiliation = affiliation,
