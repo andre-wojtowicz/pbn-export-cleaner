@@ -128,11 +128,15 @@ articles =
 
 articles =
     articles %>%
-    mutate(author = replace(author, author == "Jose Gabriel Carrasquel Vera", "Jose Carrasquel")) %>%
+    mutate(author = replace(author, author == "Jose Gabriel Carrasquel Vera", "José Carrasquel-Vera")) %>%
     mutate(author = replace(author, author == "Małecka Agnieszka", "Agnieszka Małecka")) %>%
     mutate(author = replace(author, author == "Jasiczak Michał", "Michał Jasiczak")) %>%
-    mutate(author = replace(author, author == "Reczkowski Michał", "Michał Rzeczkowski")) %>%
+    mutate(author = replace(author, author == "Rzeczkowski Michał", "Michał Rzeczkowski")) %>%
+    mutate(author = replace(author, author == "Górnisiewicz Krzysztof", "Krzysztof Górnisiewicz")) %>%
+    mutate(author = replace(author, author == "Izabela Bondecka", "Izabela Bondecka-Krzykowska")) %>%
+    mutate(author = replace(author, author == "Julian Musialak", "Julian Musielak")) %>%
     mutate(author = replace(author, author == "Małgorzata Bednarska", "Małgorzata Bednarska-Bzdęga")) %>%
+    mutate(author = replace(author, author == "Eliza Jackowska", "Eliza Jackowska-Boryc")) %>%
     rowwise %>%
     mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
     ungroup
@@ -151,4 +155,6 @@ articles = articles %>% bind_rows(
 
 # statistics
 
-articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
+#articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
+
+write.csv(articles, "pbn-articles.csv", fileEncoding = "utf-8", row.names = FALSE)
