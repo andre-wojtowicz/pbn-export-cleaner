@@ -10,6 +10,8 @@ DOCUMENT.FILE = "data/eksport.html"
 
 doc = read_html(DOCUMENT.FILE)
 
+# ---- articles ----
+
 doc.articles = doc %>% html_nodes(xpath = "/html/body/table[1]/tr")
 
 articles = data.frame()
@@ -67,7 +69,7 @@ for (i in 2:length(doc.articles))
 
     for (j in 1:length(authors))
     {
-        author      = authors[j] %>% html_text
+        author      = authors[j] %>% html_text %>% trimws
         affiliation = affiliations[j] %>% html_text
         employment  = employments[j] %>% html_text
 
@@ -119,11 +121,6 @@ for (article.title in titles.duplicated)
         filter(!(title == article.title & year < year.newest))
 }
 
-# remove articles without points and misplaced proceedings chapters
-
-articles =
-    articles %>% filter(!is.na(points))
-
 # fix author names
 
 articles =
@@ -140,6 +137,14 @@ articles =
     rowwise %>%
     mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
     ungroup
+
+# remove articles without points and misplaced proceedings chapters
+
+extra.chapters = articles %>% filter(is.na(points))
+
+articles =
+    articles %>% filter(!is.na(points))
+
 
 # fix missing authors
 
@@ -158,3 +163,147 @@ articles = articles %>% bind_rows(
 #articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
 
 write.csv(articles, "pbn-articles.csv", fileEncoding = "utf-8", row.names = FALSE)
+
+# ---- chapters ----
+
+doc.chapters = doc %>% html_nodes(xpath = "/html/body/table[2]/tr")
+
+chapters = data.frame()
+
+pb = progress::progress_bar$new(
+  format = "chapters: [:bar] :percent eta: :eta",
+  total = length(doc.chapters) - 1, clear = FALSE)
+
+for (i in 2:length(doc.chapters))
+{
+    curr.record = doc.chapters[[i]] %>% html_nodes(xpath = "td")
+
+    #  2 - title
+    #  3 - publication year
+    #  4 - autors
+    #  5 - affiliation
+    #  6 - employment
+
+    publication =
+        data.frame(title   = curr.record[2] %>% html_text %>% trimws,
+                   year    = curr.record[3] %>% html_text %>%
+                                                substr(0, 4) %>%
+                                                as.integer,
+                   stringsAsFactors = FALSE)
+
+    authors      = curr.record[4] %>% html_nodes("td")
+    affiliations = curr.record[5] %>% html_nodes("td")
+    employments  = curr.record[6] %>% html_nodes("td")
+
+    persons = data.frame()
+
+    for (j in 1:length(authors))
+    {
+        author      = authors[j] %>% html_text %>% trimws
+        affiliation = affiliations[j] %>% html_text
+        employment  = employments[j] %>% html_text
+
+        # "\U2714" == Unicode HEAVY CHECK MARK
+
+        author      = gsub("\\s+", " ", author)
+        affiliation = ifelse(affiliation == "\U2714", TRUE,
+                             ifelse(affiliation == "", NA, FALSE))
+        employment  = ifelse(employment == "\U2714", TRUE,
+                             ifelse(employment == "", NA, FALSE))
+
+        persons = rbind(persons, data.frame(author      = author,
+                                            affiliation = affiliation,
+                                            employment  = employment,
+                                            stringsAsFactors = FALSE))
+    }
+
+    chapters = rbind(chapters, merge(publication, persons))
+
+    pb$tick()
+}
+
+# change author names
+
+chapters = chapters %>%
+    rowwise %>%
+    mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
+    ungroup
+
+# add extra chapters
+
+chapters = rbind(chapters, select(extra.chapters, title, year, author,
+                                  affiliation, employment))
+
+# save file
+
+write.csv(chapters, "pbn-chapters.csv", fileEncoding = "utf-8", row.names = FALSE)
+
+
+# ---- books ----
+
+doc.books = doc %>% html_nodes(xpath = "/html/body/table[3]/tr")
+
+books = data.frame()
+
+pb = progress::progress_bar$new(
+  format = "books: [:bar] :percent eta: :eta",
+  total = length(doc.books) - 1, clear = FALSE)
+
+for (i in 2:length(doc.books))
+{
+    curr.record = doc.books[[i]] %>% html_nodes(xpath = "td")
+
+    #  2 - title
+    #  3 - publication year
+    #  4 - autors
+    #  5 - affiliation
+    #  6 - employment
+
+    publication =
+        data.frame(title   = curr.record[2] %>% html_text %>% trimws,
+                   year    = curr.record[3] %>% html_text %>%
+                                                substr(0, 4) %>%
+                                                as.integer,
+                   stringsAsFactors = FALSE)
+
+    authors      = curr.record[4] %>% html_nodes("td")
+    affiliations = curr.record[5] %>% html_nodes("td")
+    employments  = curr.record[6] %>% html_nodes("td")
+
+    persons = data.frame()
+
+    for (j in 1:length(authors))
+    {
+        author      = authors[j] %>% html_text %>% trimws
+        affiliation = affiliations[j] %>% html_text
+        employment  = employments[j] %>% html_text
+
+        # "\U2714" == Unicode HEAVY CHECK MARK
+
+        author      = gsub("\\s+", " ", author)
+        affiliation = ifelse(affiliation == "\U2714", TRUE,
+                             ifelse(affiliation == "", NA, FALSE))
+        employment  = ifelse(employment == "\U2714", TRUE,
+                             ifelse(employment == "", NA, FALSE))
+
+        persons = rbind(persons, data.frame(author      = author,
+                                            affiliation = affiliation,
+                                            employment  = employment,
+                                            stringsAsFactors = FALSE))
+    }
+
+    books = rbind(books, merge(publication, persons))
+
+    pb$tick()
+}
+
+# change author names
+
+books = books %>%
+    rowwise %>%
+    mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
+    ungroup
+
+# save file
+
+write.csv(books, "pbn-books.csv", fileEncoding = "utf-8", row.names = FALSE)
