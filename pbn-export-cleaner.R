@@ -162,7 +162,8 @@ articles = articles %>% bind_rows(
 
 #articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
 
-write.csv(articles, "pbn-articles.csv", fileEncoding = "utf-8", row.names = FALSE)
+write.csv(articles, "pbn-articles.csv", fileEncoding = "utf-8",
+          row.names = FALSE, na = "")
 
 # ---- chapters ----
 
@@ -183,12 +184,17 @@ for (i in 2:length(doc.chapters))
     #  4 - autors
     #  5 - affiliation
     #  6 - employment
+    # 10 - DOI
+
+    doi   = curr.record[10] %>% html_text
+    doi   = ifelse(doi != "", trimws(doi), NA)
 
     publication =
         data.frame(title   = curr.record[2] %>% html_text %>% trimws,
                    year    = curr.record[3] %>% html_text %>%
                                                 substr(0, 4) %>%
                                                 as.integer,
+                   doi     = doi,
                    stringsAsFactors = FALSE)
 
     authors      = curr.record[4] %>% html_nodes("td")
@@ -232,11 +238,12 @@ chapters = chapters %>%
 # add extra chapters
 
 chapters = rbind(chapters, select(extra.chapters, title, year, author,
-                                  affiliation, employment))
+                                  affiliation, employment, doi))
 
 # save file
 
-write.csv(chapters, "pbn-chapters.csv", fileEncoding = "utf-8", row.names = FALSE)
+write.csv(chapters, "pbn-chapters.csv", fileEncoding = "utf-8",
+          row.names = FALSE, na = "")
 
 
 # ---- books ----
@@ -258,12 +265,17 @@ for (i in 2:length(doc.books))
     #  4 - autors
     #  5 - affiliation
     #  6 - employment
+    # 17 - DOI
+
+    doi   = curr.record[17] %>% html_text
+    doi   = ifelse(doi != "", trimws(doi), NA)
 
     publication =
         data.frame(title   = curr.record[2] %>% html_text %>% trimws,
                    year    = curr.record[3] %>% html_text %>%
                                                 substr(0, 4) %>%
                                                 as.integer,
+                   doi     = doi,
                    stringsAsFactors = FALSE)
 
     authors      = curr.record[4] %>% html_nodes("td")
@@ -306,4 +318,5 @@ books = books %>%
 
 # save file
 
-write.csv(books, "pbn-books.csv", fileEncoding = "utf-8", row.names = FALSE)
+write.csv(books, "pbn-books.csv", fileEncoding = "utf-8",
+          row.names = FALSE, na = "")
