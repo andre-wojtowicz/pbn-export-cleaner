@@ -134,6 +134,7 @@ articles =
     mutate(author = replace(author, author == "Julian Musialak", "Julian Musielak")) %>%
     mutate(author = replace(author, author == "Małgorzata Bednarska", "Małgorzata Bednarska-Bzdęga")) %>%
     mutate(author = replace(author, author == "Eliza Jackowska", "Eliza Jackowska-Boryc")) %>%
+    mutate(author = replace(author, author == "Schoen Tomasz", "Tomasz Schoen")) %>%
     rowwise %>%
     mutate(author = replace(author, TRUE, paste(strsplit(author, " ")[[1]][c(sum(charToRaw(author) == charToRaw(" ")) + 1, 1)], collapse = ", "))) %>%
     ungroup
