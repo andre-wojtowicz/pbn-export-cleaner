@@ -186,6 +186,7 @@ for (i in 2:length(doc.chapters))
     #  5 - affiliation
     #  6 - employment
     # 10 - DOI
+    # 14 - place (book title)
 
     doi   = curr.record[10] %>% html_text
     doi   = ifelse(doi != "", trimws(doi), NA)
@@ -196,6 +197,7 @@ for (i in 2:length(doc.chapters))
                                                 substr(0, 4) %>%
                                                 as.integer,
                    doi     = doi,
+                   place   = curr.record[14] %>% html_text %>% trimws,
                    stringsAsFactors = FALSE)
 
     authors      = curr.record[4] %>% html_nodes("td")
@@ -238,8 +240,9 @@ chapters = chapters %>%
 
 # add extra chapters
 
-chapters = rbind(chapters, select(extra.chapters, title, year, author,
-                                  affiliation, employment, doi))
+chapters = rbind(chapters, select(rename(extra.chapters, place = journal),
+                                  title, year, author,
+                                  affiliation, employment, doi, place))
 
 # save file
 
