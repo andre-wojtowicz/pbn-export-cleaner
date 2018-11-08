@@ -3,6 +3,7 @@ rm(list = ls())
 suppressPackageStartupMessages({
     library(dplyr)
     library(progress)
+    library(readr)
     library(rvest)
 })
 
@@ -163,8 +164,7 @@ articles = articles %>% bind_rows(
 
 #articles %>% filter(affiliation == TRUE, points >= 15, year >= 2015) %>% group_by(author) %>% summarise(`sum of points` = sum(points), `articles` = n(), `avg. points per article` = round(sum(points) / n(), 1)) %>% arrange(desc(`sum of points`)) %>% as.data.frame
 
-write.csv(articles, "pbn-articles.csv", fileEncoding = "utf-8",
-          row.names = FALSE, na = "")
+write_excel_csv(articles, "pbn-articles.csv", na = "")
 
 # ---- chapters ----
 
@@ -246,8 +246,7 @@ chapters = rbind(chapters, select(rename(extra.chapters, place = journal),
 
 # save file
 
-write.csv(chapters, "pbn-chapters.csv", fileEncoding = "utf-8",
-          row.names = FALSE, na = "")
+write_excel_csv(chapters, "pbn-chapters.csv", na = "")
 
 
 # ---- books ----
@@ -322,5 +321,4 @@ books = books %>%
 
 # save file
 
-write.csv(books, "pbn-books.csv", fileEncoding = "utf-8",
-          row.names = FALSE, na = "")
+write_excel_csv(books, "pbn-books.csv", na = "")

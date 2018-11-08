@@ -1,9 +1,9 @@
-"title","year","doi","author","affiliation","employment"
-"Dynamika zależności na globalnym rynku finansowym",2014,,"Doman, Ryszard",TRUE,TRUE
-"Filozofia informatyki. Antologia",2014,,"Murawski, Roman",TRUE,TRUE
-"Filozofia matematyki i informatyki",2015,,"Murawski, Roman",TRUE,TRUE
-"Filozofia matematyki. Zarys dziejów",2017,,"Murawski, Roman",TRUE,TRUE
-"Filozofia matematyki. Zarys dziejów",2013,,"Murawski, Roman",TRUE,TRUE
+﻿title,year,doi,author,affiliation,employment
+Dynamika zależności na globalnym rynku finansowym,2014,,"Doman, Ryszard",TRUE,TRUE
+Filozofia informatyki. Antologia,2014,,"Murawski, Roman",TRUE,TRUE
+Filozofia matematyki i informatyki,2015,,"Murawski, Roman",TRUE,TRUE
+Filozofia matematyki. Zarys dziejów,2017,,"Murawski, Roman",TRUE,TRUE
+Filozofia matematyki. Zarys dziejów,2013,,"Murawski, Roman",TRUE,TRUE
 "Gramatyka fonetyczna w ujęciu aksjomatycznej teorii języka. Analiza komputerowa języków polskiego, chińskiego i hindi.",2015,,"Dyczkowski, Krzysztof",TRUE,TRUE
 "Human Language Technologies as a Challenge for Computer Science and Linguistics, 8th Language & Technology Conference November 17-19, 2017, Poznań, Poland Proceedings",2017,,"Graliński, Filip",TRUE,TRUE
 "Human Language Technologies as a Challenge for Computer Science and Linguistics, 8th Language & Technology Conference November 17-19, 2017, Poznań, Poland Proceedings",2017,,"Jassem, Krzysztof",TRUE,TRUE
@@ -16,25 +16,25 @@
 "Human Language Technology Challenges for Computer Science and Linguistics. 5th Language and Technology Conference, LTC 2011, Poznań, Poland, November 25--27, 2011, Revised Selected Papers",2014,,"Kubis, Marek",TRUE,TRUE
 "Human Language Technology Challenges for Computer Science and Linguistics. 5th Language and Technology Conference, LTC 2011, Poznań, Poland, November 25--27, 2011, Revised Selected Papers",2014,,"Marciniak, Jacek",TRUE,TRUE
 "Human Language Technology Challenges for Computer Science and Linguistics. 5th Language and Technology Conference, LTC 2011, Poznań, Poland, November 25--27, 2011, Revised Selected Papers",2014,,"Vetulani, Zygmunt",TRUE,TRUE
-"Inteligentne systemy e-learningowe wykorzystujące ontologie typu wordnet",2015,,"Marciniak, Jacek",TRUE,TRUE
-"Intelligent Counting under Information Imprecision. Applications to Intelligent Systems and Decision Support",2013,"10.1007/978-3-642-34685-9","Wygralak, Maciej",TRUE,TRUE
-"Intelligent Medical Decision Support System Based on Imperfect Information",2017,"10.1007/978-3-319-67005-8","Dyczkowski, Krzysztof",TRUE,TRUE
-"Introduction to Random Graphs",2016,,"Karoński, Michał",TRUE,TRUE
-"książka kucharska LaTeX",2015,,"Borkowski, Marcin",TRUE,TRUE
-"Leitfragen zur Analyse und Beurteilung metakognitiv-diskursiver Unterrichtsqualität",2016,,"Nowińska, Edyta",TRUE,TRUE
+Inteligentne systemy e-learningowe wykorzystujące ontologie typu wordnet,2015,,"Marciniak, Jacek",TRUE,TRUE
+Intelligent Counting under Information Imprecision. Applications to Intelligent Systems and Decision Support,2013,10.1007/978-3-642-34685-9,"Wygralak, Maciej",TRUE,TRUE
+Intelligent Medical Decision Support System Based on Imperfect Information,2017,10.1007/978-3-319-67005-8,"Dyczkowski, Krzysztof",TRUE,TRUE
+Introduction to Random Graphs,2016,,"Karoński, Michał",TRUE,TRUE
+książka kucharska LaTeX,2015,,"Borkowski, Marcin",TRUE,TRUE
+Leitfragen zur Analyse und Beurteilung metakognitiv-diskursiver Unterrichtsqualität,2016,,"Nowińska, Edyta",TRUE,TRUE
 "Modern Approaches in Fuzzy Sets, Intuitionistic Fuzzy Sets, Generalized Nets and Related Topics, Vol. I: Foundations",2014,,"Stachowiak, Anna",TRUE,TRUE
 "Modern Approaches in Fuzzy Sets, Intuitionistic Fuzzy Sets, Generalized Nets and Related Topics, Vol. I: Foundations",2014,,"Żywica, Patryk",TRUE,TRUE
-"Multiagent Scheduling  Models and Algorithms",2014,,"Gawiejnowicz, Stanisław",TRUE,TRUE
+Multiagent Scheduling  Models and Algorithms,2014,,"Gawiejnowicz, Stanisław",TRUE,TRUE
 "New Trends in Fuzzy Sets, Intuitionistic Fuzzy Sets, Generalized Nets and Related Topics. Vol. I: Foundations",2013,,"Wygralak, Maciej",TRUE,TRUE
-"Philosophie der Mathematik",2015,,"Murawski, Roman",TRUE,TRUE
-"Podstawy logiki modalnej",2014,,"Świrydowicz, Kazimierz",TRUE,TRUE
-"Podstawy teorii znaku ikonicznego",2017,,"Świrydowicz, Kazimierz",TRUE,TRUE
+Philosophie der Mathematik,2015,,"Murawski, Roman",TRUE,TRUE
+Podstawy logiki modalnej,2014,,"Świrydowicz, Kazimierz",TRUE,TRUE
+Podstawy teorii znaku ikonicznego,2017,,"Świrydowicz, Kazimierz",TRUE,TRUE
 "Problemy filozofii, matematyki i informatyki",2018,,"Murawski, Roman",TRUE,TRUE
 "Problemy filozofii, matematyki i informatyki",2018,,"Bondecka-Krzykowska, Izabela",TRUE,TRUE
-"Sprawa operacyjnego sprawdzenia krypt. 'Uzdrowiciele'",2015,,"Świrydowicz, Kazimierz",TRUE,TRUE
-"Stochastyczne metody matematyki finansowej w zadaniach",2014,,"Grala-Michalak, Jolanta",TRUE,TRUE
-"Szkice z filozofii i historii matematyki i logiki",2018,,"Murawski, Roman",TRUE,TRUE
-"The Philosophy of Mathematics and Logic in the 1920s and 1930s in Poland",2014,"10.1007/978-3-0348-0831-6","Murawski, Roman",TRUE,TRUE
-"Theory of Hyperconvex Metric Spaces. A Beginner's Guide",2015,,"Borkowski, Marcin",TRUE,TRUE
-"Wstęp do teorii spektralnej",2016,,"Sołtysiak, Andrzej",TRUE,TRUE
-"Z zagadnień ontologicznych informatyki",2016,,"Bondecka-Krzykowska, Izabela",TRUE,TRUE
+Sprawa operacyjnego sprawdzenia krypt. 'Uzdrowiciele',2015,,"Świrydowicz, Kazimierz",TRUE,TRUE
+Stochastyczne metody matematyki finansowej w zadaniach,2014,,"Grala-Michalak, Jolanta",TRUE,TRUE
+Szkice z filozofii i historii matematyki i logiki,2018,,"Murawski, Roman",TRUE,TRUE
+The Philosophy of Mathematics and Logic in the 1920s and 1930s in Poland,2014,10.1007/978-3-0348-0831-6,"Murawski, Roman",TRUE,TRUE
+Theory of Hyperconvex Metric Spaces. A Beginner's Guide,2015,,"Borkowski, Marcin",TRUE,TRUE
+Wstęp do teorii spektralnej,2016,,"Sołtysiak, Andrzej",TRUE,TRUE
+Z zagadnień ontologicznych informatyki,2016,,"Bondecka-Krzykowska, Izabela",TRUE,TRUE
