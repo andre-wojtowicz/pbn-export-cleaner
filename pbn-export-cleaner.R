@@ -312,6 +312,12 @@ for (i in 2:length(doc.books))
     pb$tick()
 }
 
+# fix author names
+
+books =
+    books %>%
+    mutate(author = replace(author, author == "Przybylski Bartłomiej", "Bartłomiej Przybylski"))
+
 # change author names
 
 books = books %>%
