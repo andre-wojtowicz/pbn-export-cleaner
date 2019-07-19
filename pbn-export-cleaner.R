@@ -1,11 +1,140 @@
 rm(list = ls())
 
-suppressPackageStartupMessages({
-    library(dplyr)
-    library(progress)
-    library(readr)
-    library(rvest)
-})
+DOCUMENT.HTML.PATH = "data/eksport.html"
+DOCUMENT.XML.PATH  = "data/eksport.xml"
+
+library(checkpoint)
+
+cfg = list(checkpoint =
+           list(snapshot.date     = "2019-04-15", # default for MRO 3.5.3
+                scan.for.packages = TRUE,
+                verbose           = TRUE)
+          )
+
+try(suppressWarnings(source("config.R.user")), silent = TRUE)
+
+with(cfg$checkpoint,
+     checkpoint(snapshotDate    = snapshot.date,
+                scanForPackages = scan.for.packages,
+                verbose         = verbose))
+
+library(dplyr)
+library(progress)
+library(readr)
+library(xml2)
+
+#______________________________________________________________________________
+
+articles = list()
+chapters = list()
+books    = list()
+
+parse_author = function(node)
+{
+    author = list(
+        `given-names`        = NA,
+        `family-name`        = NA,
+        `id-system`          = NA,
+        `id-pbn`             = NA,
+        `id-orcid`           = NA,
+        `affiliated-to-unit` = NA,
+        `employed-in-unit`   = NA
+    )
+
+    for (field in xml_children(node))
+        switch (xml_name(field),
+            "given-names" = { author$`given-names` = xml_text(field)},
+            "family-name" = { author$`family-name` = xml_text(field)},
+            "system-identifier" = {
+                switch(xml_attr(field, "system"),
+                       "PBN-ID" = { author$`id-pbn` = xml_text(field)},
+                       "ORCID"  = { author$`id-orcid` = xml_text(field) },
+                       "NA"     = { author$`id-system` = xml_text(field) }
+                )
+            },
+            "affiliated-to-unit" = { author$`affiliated-to-unit` = xml_text(field)},
+            "employed-in-unit" = { author$`employed-in-unit` = xml_text(field)},
+        )
+
+    author
+}
+
+parse_article = function(node)
+{
+    article = list(
+        title               = NA,
+        `system-identifier` = NA,
+        `publication-date`  = NA,
+        `doi`               = NA,
+        `journal-title`     = NA,
+        `journal-id-system` = NA,
+        `journal-id-pbn`    = NA,
+        `journal-ministerial-list` = NA,
+        `journal-points`    = NA
+        )
+
+    authors = list()
+
+    parse_journal = function(node)
+    {
+        for (field in xml_children(node))
+            switch (xml_name(field),
+                "title" = { article$`journal-title` <<- xml_text(field) },
+                "system-identifier" = {
+                    switch(xml_attr(field, "system"),
+                        "PBN-ID" = { article$`journal-id-pbn` <<- xml_text(field) },
+                        "NA" = { article$`journal-id-system` <<- xml_text(field) }
+
+                    )},
+                "type-ministerial-list" = { article$`journal-ministerial-list` <<- xml_text(field)}
+            )
+    }
+
+    for (field in xml_children(node))
+        switch (xml_name(field),
+            "title"             = { article$title = xml_text(field) },
+            "doi"               = { article$doi   = xml_text(field) },
+            "system-identifier" = { article$`system-identifier` = xml_text(field) },
+            "publication-date"  = { article$`publication-date` = xml_text(field) },
+            "journal" = parse_journal(field),
+                "author"  = { authors[[length(authors) + 1]] = parse_author(field) }
+        )
+
+    list(article, authors)
+}
+
+parse_chapter = function(node)
+{
+
+}
+
+parse_book = function(node)
+{
+
+}
+
+
+doc.xml = read_xml(DOCUMENT.XML.PATH)
+
+for (work in xml_children(doc.xml))
+{
+    switch (xml_name(work),
+        "article" = parse_article(work),
+        "chapter" = parse_chapter(work),
+        "book"    = parse_book(work)
+    )
+
+    if (xml_name(work) == "article") break
+}
+
+doc.html = read_html(DOCUMENT.HTML.PATH)
+
+
+
+
+
+
+stop()
 
 DOCUMENT.FILE = "data/eksport.html"
 
