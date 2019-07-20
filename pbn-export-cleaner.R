@@ -36,11 +36,18 @@ Author = R6Class("Author", list(
     `employed-in-unit`   = NA
 ))
 
-Article = R6Class("Article", list(
-    title                      = NA,
-    `system-identifier`        = NA,
-    `publication-date`         = NA,
-    doi                        = NA,
+Work = R6Class("Work", public = list(
+    title               = NA,
+    `system-identifier` = NA,
+    `publication-date`  = NA,
+    doi                 = NA,
+    authors             = list(),
+    add.author = function(a) {
+        self$authors[[length(self$authors) + 1]] = a }
+    )
+)
+
+Article = R6Class("Article", inherit = Work, public = list(
     `journal-title`            = NA,
     `journal-id-system`        = NA,
     `journal-id-pbn`           = NA,
@@ -48,20 +55,16 @@ Article = R6Class("Article", list(
     `journal-points`           = NA
 ))
 
-Chapter = R6Class("Chapter", list(
-    title               = NA,
-    `system-identifier` = NA,
-    `publication-date`  = NA,
-    doi                 = NA,
-    `book-title`        = NA
+Chapter = R6Class("Chapter", inherit = Work, list(
+    `book-title` = NA
 ))
 
-Book = R6Class("Book", list(
-    title               = NA,
-    `system-identifier` = NA,
-    `publication-date`  = NA,
-    doi                 = NA
-))
+Book = R6Class("Book", inherit = Work, list(
+    editors = list(),
+    add.editor = function(e) {
+        self$editors[[length(self$editors) + 1]] = e }
+    )
+)
 
 #______________________________________________________________________________
 
@@ -103,9 +106,6 @@ parse_article = function(node)
 {
     article = Article$new()
 
-    authors = list()
-    authors.next.id = idgen()
-
     parse_journal = function(node)
     {
         for (field in xml_children(node))
@@ -134,19 +134,15 @@ parse_article = function(node)
                                         xml_text(field) %>% trimws() %>%
                                         substr(0, 4) %>% as.integer() },
             "journal"           = parse_journal(field),
-            "author"            = { authors[[authors.next.id()]] =
-                                        parse_author(field) }
+            "author"            = { article$add.author(parse_author(field)) }
         )
 
-    list(article, authors)
+    article
 }
 
 parse_chapter = function(node)
 {
     chapter = Chapter$new()
-
-    authors = list()
-    authors.next.id = idgen()
 
     parse_book = function(node)
     {
@@ -169,21 +165,15 @@ parse_chapter = function(node)
                                         xml_text(field) %>% trimws() %>%
                                         substr(0, 4) %>% as.integer() },
             "book"              = parse_book(field),
-            "author"            = { authors[[authors.next.id()]] =
-                                        parse_author(field) }
+            "author"            = { chapter$add.author(parse_author(field)) }
         )
 
-    list(chapter, authors)
+    chapter
 }
 
 parse_book = function(node)
 {
     book = Book$new()
-
-    authors = list()
-    authors.next.id = idgen()
-    editors = list()
-    editors.next.id = idgen()
 
     for (field in xml_children(node))
         switch (xml_name(field),
@@ -196,16 +186,45 @@ parse_book = function(node)
             "publication-date"  = { book$`publication-date` =
                                         xml_text(field) %>% trimws() %>%
                                         substr(0, 4) %>% as.integer() },
-            "author"            = { authors[[authors.next.id()]] =
-                                        parse_author(field) },
-            "editor"            = { editors[[editors.next.id()]] =
-                                        parse_author(field) }
+            "author"            = { book$add.author(parse_author(field)) },
+            "editor"            = { book$add.editor(parse_author(field)) }
         )
 
-    list(book, authors, editors)
+    book
 }
 
 #______________________________________________________________________________
+
+doc.html = read_html(DOCUMENT.HTML.PATH)
+doc.html.articles = xml_find_all(doc.html, "/html/body/table[1]/tr")
+no.articles = length(doc.html.articles) - 1
+
+points.lookup = list(system.identifiers = vector(length = no.articles),
+                     points = vector(length = no.articles))
+points.next.id = idgen()
+
+pb = progress::progress_bar$new(
+    format = "points lookup: [:bar] :percent :elapsedfull eta: :eta",
+    total = no.articles)
+
+for (i in 2:no.articles)
+{
+    curr.record = xml_find_all(doc.html.articles[[i]], "td")
+
+    points = curr.record[22] %>% xml_text()
+    points = ifelse(!is.na(points), as.integer(points), NA)
+    if (!is.na(points) && points <= 0)
+        points = NA
+
+    system.identifier = curr.record[33] %>% xml_text() %>% trimws()
+
+    id = points.next.id()
+    points.lookup$system.identifiers[id] = system.identifier
+    points.lookup$points[id] = points
+
+    pb$tick()
+}
+
 
 doc.xml = read_xml(DOCUMENT.XML.PATH)
 doc.xml.children = xml_children(doc.xml)
@@ -219,9 +238,8 @@ chapters.next.id = idgen()
 books.next.id    = idgen()
 
 pb = progress::progress_bar$new(
-        format = "works: [:bar] :percent eta: :eta",
-        total  = length(doc.xml.children),
-        clear  = FALSE)
+        format = "works: [:bar] :percent :elapsedfull eta: :eta",
+        total  = length(doc.xml.children))
 
 for (work in doc.xml.children)
 {
@@ -234,16 +252,11 @@ for (work in doc.xml.children)
     pb$tick()
 }
 
-
-
-doc.html = read_html(DOCUMENT.HTML.PATH)
-
-
-
-
-
-
 stop("halt")
+
+
+
+
 
 DOCUMENT.FILE = "data/eksport.html"
 
