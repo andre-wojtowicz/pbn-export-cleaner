@@ -22,47 +22,148 @@ library(dplyr)
 library(progress)
 library(R6)
 library(readr)
+library(stringr)
 library(xml2)
 
 #______________________________________________________________________________
 
-Author = R6Class("Author", list(
-    `given-names`        = NA,
-    `family-name`        = NA,
-    `id-system`          = NA,
-    `id-pbn`             = NA,
-    `id-orcid`           = NA,
-    `affiliated-to-unit` = NA,
-    `employed-in-unit`   = NA
-))
-
-Work = R6Class("Work", public = list(
-    title               = NA,
-    `system-identifier` = NA,
-    `publication-date`  = NA,
-    doi                 = NA,
-    authors             = list(),
-    add.author = function(a) {
-        self$authors[[length(self$authors) + 1]] = a }
+Author = R6Class("Author",
+    public = list(
+        `given-names`        = NA,
+        `family-name`        = NA,
+        `id-system`          = NA,
+        `id-pbn`             = NA,
+        `id-orcid`           = NA,
+        `affiliated-to-unit` = NA,
+        `employed-in-unit`   = NA,
+        to.tibble = function()
+        {
+            tibble(`author-given-names` =
+                       as.character(self$`given-names`),
+                   `author-family-name` =
+                       as.character(self$`family-name`),
+                   `author-id-system` =
+                       as.character(self$`id-system`),
+                   `author-id-pbn` =
+                       as.character(self$`id-pbn`),
+                   `author-id-orcid` =
+                       as.character(self$`id-orcid`),
+                   `author-affiliated-to-unit` =
+                       as.logical(self$`affiliated-to-unit`),
+                   `author-employed-in-unit`=
+                       as.logical(self$`employed-in-unit`))
+        }
     )
 )
 
-Article = R6Class("Article", inherit = Work, public = list(
-    `journal-title`            = NA,
-    `journal-id-system`        = NA,
-    `journal-id-pbn`           = NA,
-    `journal-ministerial-list` = NA,
-    `journal-points`           = NA
-))
+Work = R6Class("Work",
+    public = list(
+        title               = NA,
+        `system-identifier` = NA,
+        `publication-date`  = NA,
+        doi                 = NA,
+        authors             = list(),
+        add.author = function(a) {
+            self$authors[[length(self$authors) + 1]] = a },
+        to.tibble = function()
+        {
+            work =
+                tibble(title              = as.character(self$title),
+                      `system-identifier` =
+                          as.character(self$`system-identifier`),
+                      `publication-date`  =
+                          as.integer(self$`publication-date`),
+                      doi                 = as.character(self$doi))
 
-Chapter = R6Class("Chapter", inherit = Work, list(
-    `book-title` = NA
-))
+            work = work %>% bind_cols(private$extra.to.tibble())
 
-Book = R6Class("Book", inherit = Work, list(
-    editors = list(),
-    add.editor = function(e) {
-        self$editors[[length(self$editors) + 1]] = e }
+            authors.tbl = private$get.authors()
+
+            work %>% mutate(foo = 1) %>%
+                full_join((authors.tbl %>% mutate(foo = 1)), by = "foo") %>%
+                select(-foo)
+        }
+    ),
+    private = list(
+        extra.to.tibble = function()
+        {
+            tibble()
+        },
+        get.authors = function()
+        {
+            do.call("rbind",
+                    lapply(self$authors, function(x) {
+                           x$to.tibble()}))
+        }
+    )
+)
+
+Article = R6Class("Article", inherit = Work,
+    public = list(
+        `journal-title`            = NA,
+        `journal-id-system`        = NA,
+        `journal-id-pbn`           = NA,
+        `journal-ministerial-list` = NA,
+        `journal-points`           = NA
+    ),
+    private = list(
+        extra.to.tibble = function()
+        {
+            tibble(`journal-title`     = as.character(self$`journal-title`),
+                   `journal-id-system` =
+                       as.character(self$`journal-id-system`),
+                   `journal-id-pbn`    = as.character(self$`journal-id-pbn`),
+                   `journal-ministerial-list` =
+                       as.character(self$`journal-ministerial-list`),
+                   `journal-points`    = as.integer(self$`journal-points`))
+        }
+    )
+)
+
+Chapter = R6Class("Chapter", inherit = Work,
+    public = list(
+        `book-title` = NA
+    ),
+    private = list(
+        extra.to.tibble = function()
+        {
+            tibble(`book-title` = as.character(self$`book-title`))
+        }
+    )
+)
+
+Book = R6Class("Book", inherit = Work,
+    public = list(
+        editors = list(),
+        add.editor = function(e) {
+            self$editors[[length(self$editors) + 1]] = e }
+        ),
+    private = list(
+        get.authors = function()
+        {
+            a_tbl = do.call("rbind",
+                            lapply(self$authors, function(x) {
+                                   x$to.tibble()})) %>%
+                    as_tibble() %>%
+                    mutate(`is-author` = TRUE,
+                           `is-editor` = FALSE)
+            e_tbl = do.call("rbind",
+                            lapply(self$editors, function(x) {
+                                   x$to.tibble()})) %>%
+                    as_tibble() %>%
+                    mutate(`is-author` = FALSE,
+                           `is-editor` = TRUE)
+
+            if (nrow(e_tbl) == 0)
+                return(a_tbl)
+            if (nrow(a_tbl) == 0)
+                return(e_tbl)
+
+            # books[[28]]$to.tibble()
+            # books[[34]]$to.tibble()
+
+            browser()
+        }
     )
 )
 
@@ -95,14 +196,16 @@ parse_author = function(node)
                        "NA"     = { author$`id-system` = xml_text(field) }
                 )
             },
-            "affiliated-to-unit" = { author$`affiliated-to-unit` = xml_text(field)},
-            "employed-in-unit" = { author$`employed-in-unit` = xml_text(field)},
+            "affiliated-to-unit" = { author$`affiliated-to-unit` =
+                                        xml_text(field)},
+            "employed-in-unit"   = { author$`employed-in-unit` =
+                                        xml_text(field)},
         )
 
     author
 }
 
-parse_article = function(node)
+parse_article = function(node, points.lookup)
 {
     article = Article$new()
 
@@ -114,11 +217,14 @@ parse_article = function(node)
                                 xml_text(field) %>% trimws() },
                 "system-identifier" = {
                     switch(xml_attr(field, "system"),
-                        "PBN-ID" = { article$`journal-id-pbn` <<- xml_text(field) },
-                        "NA" = { article$`journal-id-system` <<- xml_text(field) }
+                        "PBN-ID" = { article$`journal-id-pbn` <<-
+                                        xml_text(field) },
+                        "NA" = { article$`journal-id-system` <<-
+                                        xml_text(field) }
 
                     )},
-                "type-ministerial-list" = { article$`journal-ministerial-list` <<- xml_text(field)}
+                "type-ministerial-list" =
+                    { article$`journal-ministerial-list` <<- xml_text(field)}
             )
     }
 
@@ -136,6 +242,14 @@ parse_article = function(node)
             "journal"           = parse_journal(field),
             "author"            = { article$add.author(parse_author(field)) }
         )
+
+    pts = points.lookup %>%
+        filter(system.identifier == article$`system-identifier`) %>%
+        select(points) %>%
+        pull
+
+    if (length(pts) != 0 && !is.na(pts)) # catch integer(0)
+        article$`journal-points` = pts
 
     article
 }
@@ -199,7 +313,7 @@ doc.html = read_html(DOCUMENT.HTML.PATH)
 doc.html.articles = xml_find_all(doc.html, "/html/body/table[1]/tr")
 no.articles = length(doc.html.articles) - 1
 
-points.lookup = list(system.identifiers = vector(length = no.articles),
+points.lookup = list(system.identifier = vector(length = no.articles),
                      points = vector(length = no.articles))
 points.next.id = idgen()
 
@@ -219,11 +333,14 @@ for (i in 2:no.articles)
     system.identifier = curr.record[33] %>% xml_text() %>% trimws()
 
     id = points.next.id()
-    points.lookup$system.identifiers[id] = system.identifier
+    points.lookup$system.identifier[id] = system.identifier
     points.lookup$points[id] = points
 
     pb$tick()
 }
+
+points.lookup = points.lookup %>% as_tibble()
+
 
 
 doc.xml = read_xml(DOCUMENT.XML.PATH)
@@ -244,7 +361,8 @@ pb = progress::progress_bar$new(
 for (work in doc.xml.children)
 {
     switch (xml_name(work),
-        "article" = { articles[[articles.next.id()]] = parse_article(work) },
+        "article" = { articles[[articles.next.id()]] =
+                          parse_article(work, points.lookup) },
         "chapter" = { chapters[[chapters.next.id()]] = parse_chapter(work) },
         "book"    = { books[[books.next.id()]]       = parse_book(work) }
     )
