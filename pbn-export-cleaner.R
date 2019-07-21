@@ -3,6 +3,9 @@ rm(list = ls())
 DOCUMENT.HTML.PATH = "data/eksport.html"
 DOCUMENT.XML.PATH  = "data/eksport.xml"
 
+if (!("checkpoint" %in% rownames(installed.packages())))
+    install.packages("checkpoint")
+
 library(checkpoint)
 
 cfg = list(checkpoint =
