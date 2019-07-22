@@ -104,8 +104,9 @@ Work = R6Class("Work",
 Article = R6Class("Article", inherit = Work,
     public = list(
         `journal-title`            = NA,
-        `journal-id-system`        = NA,
         `journal-id-pbn`           = NA,
+        `journal-id-issn`          = NA,
+        `journal-id-eissn`         = NA,
         `journal-ministerial-list` = NA,
         `journal-points`           = NA
     ),
@@ -113,9 +114,9 @@ Article = R6Class("Article", inherit = Work,
         extra.to.tibble = function()
         {
             tibble(`journal-title`     = as.character(self$`journal-title`),
-                   `journal-id-system` =
-                       as.character(self$`journal-id-system`),
                    `journal-id-pbn`    = as.character(self$`journal-id-pbn`),
+                   `journal-id-issn`   = as.character(self$`journal-id-issn`),
+                   `journal-id-eissn`  = as.character(self$`journal-id-eissn`),
                    `journal-ministerial-list` =
                        as.character(self$`journal-ministerial-list`),
                    `journal-points`    = as.integer(self$`journal-points`))
@@ -244,9 +245,10 @@ parse_article = function(node, points.lookup)
                     switch(xml_attr(field, "system"),
                         "PBN-ID" = { article$`journal-id-pbn` <<-
                                         xml_text(field) },
-                        "NA" = { article$`journal-id-system` <<-
+                        "PBN-ISSN-ID" = { article$`journal-id-issn` <<-
+                                        xml_text(field) },
+                        "PBN-EISSN-ID" = { article$`journal-id-eissn` <<-
                                         xml_text(field) }
-
                     )},
                 "type-ministerial-list" =
                     { article$`journal-ministerial-list` <<- xml_text(field)}
@@ -258,7 +260,8 @@ parse_article = function(node, points.lookup)
             "title"             = { article$title =
                                         xml_text(field) %>% trimws() },
             "doi"               = { article$doi   =
-                                        xml_text(field) %>% trimws() },
+                                        xml_text(field) %>% trimws() %>%
+                                        ifelse(. == "", NA, .) },
             "system-identifier" = { article$`system-identifier` =
                                         xml_text(field) %>% trimws() },
             "publication-date"  = { article$`publication-date` =
@@ -297,7 +300,8 @@ parse_chapter = function(node)
             "title"             = { chapter$title =
                                         xml_text(field) %>% trimws() },
             "doi"               = { chapter$doi   =
-                                        xml_text(field) %>% trimws() },
+                                        xml_text(field) %>% trimws() %>%
+                                        ifelse(. == "", NA, .) },
             "system-identifier" = { chapter$`system-identifier` =
                                         xml_text(field) %>% trimws() },
             "publication-date"  = { chapter$`publication-date` =
@@ -319,7 +323,8 @@ parse_book = function(node)
             "title"             = { book$title =
                                         xml_text(field) %>% trimws() },
             "doi"               = { book$doi   =
-                                        xml_text(field) %>% trimws() },
+                                        xml_text(field) %>% trimws() %>%
+                                        ifelse(. == "", NA, .) },
             "system-identifier" = { book$`system-identifier` =
                                         xml_text(field) %>% trimws() },
             "publication-date"  = { book$`publication-date` =
@@ -394,6 +399,10 @@ for (work in doc.xml.children)
 
     pb$tick()
 }
+
+articles = bind_rows(lapply(articles, function(x) {x$to.tibble()}))
+chapters = bind_rows(lapply(chapters, function(x) {x$to.tibble()}))
+books    = bind_rows(lapply(books, function(x) {x$to.tibble()}))
 
 stop("halt")
 
