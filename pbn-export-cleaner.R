@@ -324,7 +324,7 @@ pb = progress::progress_bar$new(
     format = "points lookup: [:bar] :percent :elapsedfull eta: :eta",
     total = no.articles)
 
-for (i in 2:no.articles)
+for (i in 2:(no.articles+1))
 {
     curr.record = xml_find_all(doc.html.articles[[i]], "td")
 
