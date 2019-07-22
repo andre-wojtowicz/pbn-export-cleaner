@@ -147,13 +147,13 @@ Book = R6Class("Book", inherit = Work,
             a_tbl = do.call("rbind",
                             lapply(self$authors, function(x) {
                                    x$to.tibble()})) %>%
-                    as_tibble() %>%
+                    as_tibble() %>% # convert possible NULL
                     mutate(`is-author` = TRUE,
                            `is-editor` = FALSE)
             e_tbl = do.call("rbind",
                             lapply(self$editors, function(x) {
                                    x$to.tibble()})) %>%
-                    as_tibble() %>%
+                    as_tibble() %>% # convert possible NULL
                     mutate(`is-author` = FALSE,
                            `is-editor` = TRUE)
 
@@ -162,10 +162,32 @@ Book = R6Class("Book", inherit = Work,
             if (nrow(a_tbl) == 0)
                 return(e_tbl)
 
-            # books[[28]]$to.tibble()
-            # books[[34]]$to.tibble()
+            r_tbl = tibble()
 
-            browser()
+            for (i in seq_along(a_tbl))
+            {
+                curr_author = a_tbl %>% slice(i)
+                if (any(!(is.na(curr_author$`author-id-pbn`)) &
+                        curr_author$`author-id-pbn` %in% e_tbl$`author-id-pbn`,
+                        !(is.na(curr_author$`author-id-orcid`)) &
+                        curr_author$`author-id-orcid` %in% e_tbl$`author-id-orcid`,
+                        !(is.na(curr_author$`author-id-system`)) &
+                        curr_author$`author-id-system` %in% e_tbl$`author-id-system`))
+                {
+                    curr_author$`is-editor` = TRUE
+                    e_tbl = e_tbl %>% # remove matched editor record
+                        filter(!((!(is.na(curr_author$`author-id-pbn`)) &
+                                curr_author$`author-id-pbn` == `author-id-pbn`) |
+                                (!(is.na(curr_author$`author-id-orcid`)) &
+                                curr_author$`author-id-orcid` == e_tbl$`author-id-orcid`) |
+                                (!(is.na(curr_author$`author-id-system`)) &
+                                curr_author$`author-id-system` == e_tbl$`author-id-system`)))
+                }
+
+                r_tbl = r_tbl %>% bind_rows(curr_author)
+            }
+
+            r_tbl = r_tbl %>% bind_rows(e_tbl)
         }
     )
 )
@@ -202,7 +224,7 @@ parse_author = function(node)
             "affiliated-to-unit" = { author$`affiliated-to-unit` =
                                         xml_text(field)},
             "employed-in-unit"   = { author$`employed-in-unit` =
-                                        xml_text(field)},
+                                        xml_text(field)}
         )
 
     author
