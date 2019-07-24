@@ -46,7 +46,7 @@ Author = R6Class("Author",
         {
             stopifnot(class(work) == "xml_node")
 
-             for (field in xml_children(node))
+            for (field in xml_children(node))
             switch (xml_name(field),
                 "given-names" = { self$`given-names` =
                                     xml_text(field) %>% trimws() },
@@ -169,22 +169,22 @@ Article = R6Class("Article", inherit = Work,
                 if (xml_name(field1) == "journal")
                 {
                     for (field2 in xml_children(field1))
-                        switch (xml_name(field2),
-                            "title" = { self$`journal-title` <<-
-                                            xml_text(field2) %>% trimws() },
-                            "system-identifier" = {
-                                switch(xml_attr(field2, "system"),
-                                    "PBN-ID"       = { self$`journal-id-pbn` <<-
-                                                       xml_text(field2) },
-                                    "PBN-ISSN-ID"  = { self$`journal-id-issn` <<-
-                                                       xml_text(field2) },
-                                    "PBN-EISSN-ID" = { self$`journal-id-eissn` <<-
-                                                       xml_text(field2) }
-                                )},
-                            "type-ministerial-list" =
-                                { self$`journal-ministerial-list` <<-
-                                    xml_text(field2)}
-                        )
+                    switch (xml_name(field2),
+                        "title" = { self$`journal-title` <<-
+                                        xml_text(field2) %>% trimws() },
+                        "system-identifier" = {
+                            switch(xml_attr(field2, "system"),
+                                "PBN-ID"       = { self$`journal-id-pbn` <<-
+                                                   xml_text(field2) },
+                                "PBN-ISSN-ID"  = { self$`journal-id-issn` <<-
+                                                   xml_text(field2) },
+                                "PBN-EISSN-ID" = { self$`journal-id-eissn` <<-
+                                                   xml_text(field2) }
+                            )},
+                        "type-ministerial-list" =
+                            { self$`journal-ministerial-list` <<-
+                                xml_text(field2)}
+                    )
                 }
             }
 
