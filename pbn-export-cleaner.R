@@ -43,7 +43,7 @@ Author = R6Class("Author",
         `employed-in-unit`   = NA,
         initialize = function(node)
         {
-            stopifnot(class(work) == "xml_node")
+            stopifnot(class(node) == "xml_node")
 
             for (field in xml_children(node))
             switch (xml_name(field),
@@ -94,7 +94,7 @@ Work = R6Class("Work",
         authors             = list(),
         initialize = function(node)
         {
-            stopifnot(class(work) == "xml_node")
+            stopifnot(class(node) == "xml_node")
 
             for (field in xml_children(node))
             switch (xml_name(field),
