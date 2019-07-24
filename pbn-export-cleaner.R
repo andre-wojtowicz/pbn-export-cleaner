@@ -12,8 +12,7 @@ cfg = list(checkpoint =
            list(snapshot.date     = "2019-04-15", # default for MRO 3.5.3
                 scan.for.packages = TRUE,
                 verbose           = TRUE),
-           extra.fixes = FALSE
-          )
+           extra.fixes = FALSE)
 
 try(suppressWarnings(source("config.R.user")), silent = TRUE)
 
