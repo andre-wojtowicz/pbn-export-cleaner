@@ -42,6 +42,29 @@ Author = R6Class("Author",
         `id-orcid`           = NA,
         `affiliated-to-unit` = NA,
         `employed-in-unit`   = NA,
+        initialize = function(node)
+        {
+            stopifnot(class(work) == "xml_node")
+
+             for (field in xml_children(node))
+            switch (xml_name(field),
+                "given-names" = { self$`given-names` =
+                                    xml_text(field) %>% trimws() },
+                "family-name" = { self$`family-name` =
+                                    xml_text(field) %>% trimws() },
+                "system-identifier" = {
+                    switch(xml_attr(field, "system"),
+                           "PBN-ID" = { self$`id-pbn` = xml_text(field)},
+                           "ORCID"  = { self$`id-orcid` = xml_text(field) },
+                           "NA"     = { self$`id-system` = xml_text(field) }
+                    )
+                },
+                "affiliated-to-unit" = { self$`affiliated-to-unit` =
+                                            xml_text(field)},
+                "employed-in-unit"   = { self$`employed-in-unit` =
+                                            xml_text(field)}
+            )
+        },
         to.tibble = function()
         {
             tibble(`author-given-names` =
@@ -68,9 +91,28 @@ Work = R6Class("Work",
         `system-identifier` = NA,
         `publication-date`  = NA,
         doi                 = NA,
+        `is-conference`     = NA,
         authors             = list(),
-        add.author = function(a) {
-            self$authors[[length(self$authors) + 1]] = a },
+        initialize = function(node)
+        {
+            stopifnot(class(work) == "xml_node")
+
+            for (field in xml_children(node))
+            switch (xml_name(field),
+                "title"             = { self$title =
+                                            xml_text(field) %>% trimws() },
+                "system-identifier" = { self$`system-identifier` =
+                                            xml_text(field) %>% trimws() },
+                "publication-date"  = { self$`publication-date` =
+                                            xml_text(field) %>% trimws() %>%
+                                            substr(0, 4) %>% as.integer() },
+                "doi"               = { self$doi   =
+                                            xml_text(field) %>% trimws() %>%
+                                            ifelse(. == "", NA, .) },
+                "conference"        = { self$`is-conference` = TRUE },
+                "author"            = { private$add.author(Author$new(field)) }
+            )
+        },
         to.tibble = function()
         {
             work =
@@ -79,7 +121,8 @@ Work = R6Class("Work",
                           as.character(self$`system-identifier`),
                       `publication-date`  =
                           as.integer(self$`publication-date`),
-                      doi                 = as.character(self$doi))
+                      doi                 = as.character(self$doi),
+                      `is-conference`     = as.character(self$`is-conference`))
 
             work = work %>% bind_cols(private$extra.to.tibble())
 
@@ -91,6 +134,11 @@ Work = R6Class("Work",
         }
     ),
     private = list(
+        add.author = function(a)
+        {
+            stopifnot(R6::is.R6(a) & any(class(a) == "Author"))
+            self$authors[[length(self$authors) + 1]] = a
+        },
         extra.to.tibble = function()
         {
             tibble()
@@ -111,7 +159,43 @@ Article = R6Class("Article", inherit = Work,
         `journal-id-issn`          = NA,
         `journal-id-eissn`         = NA,
         `journal-ministerial-list` = NA,
-        `journal-points`           = NA
+        `journal-points`           = NA,
+        initialize = function(node, points.lookup)
+        {
+            super$initialize(node)
+
+            for (field1 in xml_children(node))
+            {
+                if (xml_name(field1) == "journal")
+                {
+                    for (field2 in xml_children(field1))
+                        switch (xml_name(field2),
+                            "title" = { self$`journal-title` <<-
+                                            xml_text(field2) %>% trimws() },
+                            "system-identifier" = {
+                                switch(xml_attr(field2, "system"),
+                                    "PBN-ID"       = { self$`journal-id-pbn` <<-
+                                                       xml_text(field2) },
+                                    "PBN-ISSN-ID"  = { self$`journal-id-issn` <<-
+                                                       xml_text(field2) },
+                                    "PBN-EISSN-ID" = { self$`journal-id-eissn` <<-
+                                                       xml_text(field2) }
+                                )},
+                            "type-ministerial-list" =
+                                { self$`journal-ministerial-list` <<-
+                                    xml_text(field2)}
+                        )
+                }
+            }
+
+            pts = points.lookup %>%
+                filter(system.identifier == self$`system-identifier`) %>%
+                select(points) %>%
+                pull
+
+            if (length(pts) != 0 && !is.na(pts)) # catch integer(0)
+                self$`journal-points` = pts
+            }
     ),
     private = list(
         extra.to.tibble = function()
@@ -129,7 +213,21 @@ Article = R6Class("Article", inherit = Work,
 
 Chapter = R6Class("Chapter", inherit = Work,
     public = list(
-        `book-title` = NA
+        `book-title` = NA,
+        initialize = function(node)
+        {
+            super$initialize(node)
+
+            for (field1 in xml_children(node))
+            {
+                if (xml_name(field1) == "book")
+                {
+                    for (field2 in xml_children(node))
+                        if (xml_name(field2) == "title")
+                            self$`book-title` = xml_text(field2) %>% trimws()
+                }
+            }
+        }
     ),
     private = list(
         extra.to.tibble = function()
@@ -142,10 +240,21 @@ Chapter = R6Class("Chapter", inherit = Work,
 Book = R6Class("Book", inherit = Work,
     public = list(
         editors = list(),
-        add.editor = function(e) {
-            self$editors[[length(self$editors) + 1]] = e }
-        ),
+        initialize = function(node)
+        {
+            super$initialize(node)
+
+            for (field in xml_children(node))
+                if (xml_name(field) == "editor")
+                    private$add.editor(Author$new(field))
+        }
+    ),
     private = list(
+        add.editor = function(e)
+        {
+            stopifnot(R6::is.R6(e) & any(class(e) == "Author"))
+            self$editors[[length(self$editors) + 1]] = e
+        },
         get.authors = function()
         {
             a_tbl = do.call("rbind",
@@ -208,138 +317,6 @@ idgen = function(v = 0)
     }
 }
 
-parse_author = function(node)
-{
-    author = Author$new()
-
-    for (field in xml_children(node))
-        switch (xml_name(field),
-            "given-names" = { author$`given-names` =
-                                xml_text(field) %>% trimws() },
-            "family-name" = { author$`family-name` =
-                                xml_text(field) %>% trimws() },
-            "system-identifier" = {
-                switch(xml_attr(field, "system"),
-                       "PBN-ID" = { author$`id-pbn` = xml_text(field)},
-                       "ORCID"  = { author$`id-orcid` = xml_text(field) },
-                       "NA"     = { author$`id-system` = xml_text(field) }
-                )
-            },
-            "affiliated-to-unit" = { author$`affiliated-to-unit` =
-                                        xml_text(field)},
-            "employed-in-unit"   = { author$`employed-in-unit` =
-                                        xml_text(field)}
-        )
-
-    author
-}
-
-parse_article = function(node, points.lookup)
-{
-    article = Article$new()
-
-    parse_journal = function(node)
-    {
-        for (field in xml_children(node))
-            switch (xml_name(field),
-                "title" = { article$`journal-title` <<-
-                                xml_text(field) %>% trimws() },
-                "system-identifier" = {
-                    switch(xml_attr(field, "system"),
-                        "PBN-ID" = { article$`journal-id-pbn` <<-
-                                        xml_text(field) },
-                        "PBN-ISSN-ID" = { article$`journal-id-issn` <<-
-                                        xml_text(field) },
-                        "PBN-EISSN-ID" = { article$`journal-id-eissn` <<-
-                                        xml_text(field) }
-                    )},
-                "type-ministerial-list" =
-                    { article$`journal-ministerial-list` <<- xml_text(field)}
-            )
-    }
-
-    for (field in xml_children(node))
-        switch (xml_name(field),
-            "title"             = { article$title =
-                                        xml_text(field) %>% trimws() },
-            "doi"               = { article$doi   =
-                                        xml_text(field) %>% trimws() %>%
-                                        ifelse(. == "", NA, .) },
-            "system-identifier" = { article$`system-identifier` =
-                                        xml_text(field) %>% trimws() },
-            "publication-date"  = { article$`publication-date` =
-                                        xml_text(field) %>% trimws() %>%
-                                        substr(0, 4) %>% as.integer() },
-            "journal"           = parse_journal(field),
-            "author"            = { article$add.author(parse_author(field)) }
-        )
-
-    pts = points.lookup %>%
-        filter(system.identifier == article$`system-identifier`) %>%
-        select(points) %>%
-        pull
-
-    if (length(pts) != 0 && !is.na(pts)) # catch integer(0)
-        article$`journal-points` = pts
-
-    article
-}
-
-parse_chapter = function(node)
-{
-    chapter = Chapter$new()
-
-    parse_book = function(node)
-    {
-        for (field in xml_children(node))
-            switch (xml_name(field),
-                "title" = { chapter$`book-title` <<-
-                                xml_text(field) %>% trimws() }
-            )
-    }
-
-    for (field in xml_children(node))
-        switch (xml_name(field),
-            "title"             = { chapter$title =
-                                        xml_text(field) %>% trimws() },
-            "doi"               = { chapter$doi   =
-                                        xml_text(field) %>% trimws() %>%
-                                        ifelse(. == "", NA, .) },
-            "system-identifier" = { chapter$`system-identifier` =
-                                        xml_text(field) %>% trimws() },
-            "publication-date"  = { chapter$`publication-date` =
-                                        xml_text(field) %>% trimws() %>%
-                                        substr(0, 4) %>% as.integer() },
-            "book"              = parse_book(field),
-            "author"            = { chapter$add.author(parse_author(field)) }
-        )
-
-    chapter
-}
-
-parse_book = function(node)
-{
-    book = Book$new()
-
-    for (field in xml_children(node))
-        switch (xml_name(field),
-            "title"             = { book$title =
-                                        xml_text(field) %>% trimws() },
-            "doi"               = { book$doi   =
-                                        xml_text(field) %>% trimws() %>%
-                                        ifelse(. == "", NA, .) },
-            "system-identifier" = { book$`system-identifier` =
-                                        xml_text(field) %>% trimws() },
-            "publication-date"  = { book$`publication-date` =
-                                        xml_text(field) %>% trimws() %>%
-                                        substr(0, 4) %>% as.integer() },
-            "author"            = { book$add.author(parse_author(field)) },
-            "editor"            = { book$add.editor(parse_author(field)) }
-        )
-
-    book
-}
-
 #______________________________________________________________________________
 
 # create points lookup table
@@ -397,17 +374,19 @@ for (work in doc.xml.children)
 {
     switch (xml_name(work),
         "article" = { articles[[articles.next.id()]] =
-                          parse_article(work, points.lookup) },
-        "chapter" = { chapters[[chapters.next.id()]] = parse_chapter(work) },
-        "book"    = { books[[books.next.id()]]       = parse_book(work) }
+                            Article$new(work, points.lookup)$to.tibble() },
+        "chapter" = { chapters[[chapters.next.id()]] =
+                            Chapter$new(work)$to.tibble() },
+        "book"    = { books[[books.next.id()]] =
+                            Book$new(work)$to.tibble() }
     )
 
     pb$tick()
 }
 
-articles = bind_rows(lapply(articles, function(x) {x$to.tibble()}))
-chapters = bind_rows(lapply(chapters, function(x) {x$to.tibble()}))
-books    = bind_rows(lapply(books, function(x) {x$to.tibble()}))
+articles = bind_rows(articles)
+chapters = bind_rows(chapters)
+books    = bind_rows(books)
 
 # clean data
 
